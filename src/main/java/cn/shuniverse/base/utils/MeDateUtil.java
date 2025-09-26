@@ -1,5 +1,6 @@
 package cn.shuniverse.base.utils;
 
+import cn.hutool.core.date.DateUtil;
 import cn.shuniverse.base.constants.DateConstants;
 
 /**
@@ -8,7 +9,7 @@ import cn.shuniverse.base.constants.DateConstants;
  * @author 蛮小满Sama
  * @description 时间工具类
  */
-public class DateUtil extends cn.hutool.core.date.DateUtil {
+public class MeDateUtil extends DateUtil {
     /**
      * 时间戳转换成日期格式字符串
      *
