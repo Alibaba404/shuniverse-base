@@ -79,7 +79,7 @@ spring:
         url-pattern: /druid/*
         # 控制台管理用户名和密码
         login-username: aikuiba
-        login-password: aikuiba2025.1
+        login-password: 
       filter:
         stat:
           enabled: true
