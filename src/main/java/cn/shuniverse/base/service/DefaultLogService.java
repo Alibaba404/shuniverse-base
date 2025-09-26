@@ -1,7 +1,8 @@
 package cn.shuniverse.base.service;
 
+import cn.hutool.json.JSONUtil;
+import cn.shuniverse.base.entity.dto.LogDto;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,9 +14,14 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class DefaultLogService implements LogService {
+    /**
+     * 日志操作接口（可打印，可进行入库）
+     *
+     * @param logDto
+     */
     @Override
-    public void logOperation(JoinPoint point, long time, Object result, Throwable e) {
+    public void logOperation(LogDto logDto) {
         // 空实现，什么都不做
-        log.info("使用默认日志持久化实现,仅打印!请求耗时：{}ms，响应结果：{}", time, result);
+        log.info("使用默认日志持久化实现！请求耗时：{}ms，响应结果：{}", logDto.getTime(), JSONUtil.toJsonStr(logDto));
     }
 }

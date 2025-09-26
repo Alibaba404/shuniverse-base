@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     public <T> R<T> globalExceptionHandler(Exception e, HttpServletRequest request) {
         StringBuilder builder = new StringBuilder("\n==============================Exception Begin==============================\n");
         String message = e.getMessage();
-        // 系统异常
+        // 系统异常:具体的错误信息不应该展示给用户
         BisException bisException = BisException.me(RCode.FAILED);
         if (e instanceof BisException bex) {
             //业务异常
