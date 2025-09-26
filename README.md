@@ -1,3 +1,8 @@
+## 项目描述
+
+- JDK版本：17
+- 框架版本（SpringBoot）：2.6.13
+
 ## 包含功能：
 
 - 邮件服务
@@ -9,6 +14,7 @@
 ## 使用方法
 
 将项目拉取到本地--》mvn clean install 安装到本地并在项目中添加依赖
+
 ```pom.xml
 <dependency>
     <groupId>cn.shuniverse</groupId>
