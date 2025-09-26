@@ -6,15 +6,3 @@ security:
     expire-access: 900000
     # 7天
     expire-refresh: 604800000
-#spring:
-#  # 邮件配置
-#  mail:
-#    host: smtp.163.com
-#    username: username
-#    password: password
-#    properties:
-#      mail:
-#        smtp:
-#          auth: true
-#          starttls:
-#            enable: true
