@@ -1,0 +1,8 @@
+security:
+  jwt:
+    # 32位密钥
+    secret-key: LZVtT5pB1PFfu2A2CsUpI7oIYcj7zfLl
+    # 15分钟
+    expire-access: 900000
+    # 7天
+    expire-refresh: 604800000
