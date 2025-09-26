@@ -54,7 +54,7 @@ public class LogAspect {
         long time = Clock.systemUTC().millis() - begin;
         // 保存日志
         if (Objects.nonNull(logService)) {
-            logService.logSave(point, time, result, null);
+            logService.logOperation(point, time, result, null);
         }
         return result;
     }
@@ -68,7 +68,7 @@ public class LogAspect {
     @AfterThrowing(pointcut = "pointCut()", throwing = "e")
     public void afterThrowing(JoinPoint point, Throwable e) {
         if (Objects.nonNull(logService)) {
-            logService.logSave(point, 0, null, e);
+            logService.logOperation(point, 0, null, e);
         }
     }
 

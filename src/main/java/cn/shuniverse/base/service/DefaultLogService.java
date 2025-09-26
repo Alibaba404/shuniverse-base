@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DefaultLogService implements LogService {
     @Override
-    public void logSave(JoinPoint point, long time, Object result, Throwable e) {
+    public void logOperation(JoinPoint point, long time, Object result, Throwable e) {
         // 空实现，什么都不做
         log.info("使用默认日志持久化实现,仅打印!请求耗时：{}ms，响应结果：{}", time, result);
     }

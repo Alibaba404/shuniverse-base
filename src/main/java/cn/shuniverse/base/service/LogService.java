@@ -9,5 +9,13 @@ import org.aspectj.lang.JoinPoint;
  * @description
  */
 public interface LogService {
-    void logSave(JoinPoint joinPoint, long time, Object result, Throwable ex);
+    /**
+     * 日志操作接口（可打印，可进行入库）
+     *
+     * @param joinPoint 切点
+     * @param time      请求耗时
+     * @param result    请求响应结果
+     * @param ex        异常
+     */
+    void logOperation(JoinPoint joinPoint, long time, Object result, Throwable ex);
 }
