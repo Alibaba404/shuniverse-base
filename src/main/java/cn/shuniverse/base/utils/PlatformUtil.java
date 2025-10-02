@@ -6,14 +6,14 @@ package cn.shuniverse.base.utils;
  * @author 蛮小满Sama
  * @description
  */
-public class Platform {
+public class PlatformUtil {
     private static final String WINDOWS = "Windows";
     private static final String MAC = "Mac";
     private static final String MAC_DARWIN = "Darwin";
     private static final String LINUX = "Linux";
     private static final String UNKNOWN = "Unknown";
 
-    private Platform() {
+    private PlatformUtil() {
     }
 
     public static String getPlatform() {

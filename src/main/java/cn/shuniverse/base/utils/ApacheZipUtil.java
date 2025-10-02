@@ -89,7 +89,7 @@ public class ApacheZipUtil {
             zip = new File(zip.getParent(), baseName + "_" + timestamp + ".zip");
         }
         // 根据操作系统设置编码（Windows 推荐 GBK，其他系统使用 UTF-8）
-        String encoding = Platform.isWindows() ? "GBK" : "UTF-8";
+        String encoding = PlatformUtil.isWindows() ? "GBK" : "UTF-8";
         try (OutputStream fos = new FileOutputStream(zip);
              BufferedOutputStream bos = new BufferedOutputStream(fos);
              ZipArchiveOutputStream zos = new ZipArchiveOutputStream(bos)) {

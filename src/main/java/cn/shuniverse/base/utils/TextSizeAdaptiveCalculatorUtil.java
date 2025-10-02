@@ -9,7 +9,7 @@ import java.nio.charset.Charset;
  * Created by 蛮小满Sama at 2025-07-09 11:02
  *
  * @author 蛮小满Sama
- * @description
+ * @description 文本大小适配计算工具类
  */
 public class TextSizeAdaptiveCalculatorUtil {
     private static final String[] UNITS = new String[]{"Byte", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
