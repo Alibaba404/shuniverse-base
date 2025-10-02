@@ -134,6 +134,19 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!--========apache-tika:文档解析-开始========-->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>3.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+            <version>3.2.3</version>
+        </dependency>
+        <!--========apache-tika:文档解析-结束========-->
+
     </dependencies>
 
     <dependencyManagement>
@@ -151,6 +164,11 @@
                 <version>4.4.0</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.15.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

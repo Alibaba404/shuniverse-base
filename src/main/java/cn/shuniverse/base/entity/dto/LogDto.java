@@ -64,4 +64,9 @@ public class LogDto {
      * 执行时间戳
      */
     private LocalDateTime executeAt;
+
+    /**
+     * 执行IP
+     */
+    private String ip;
 }

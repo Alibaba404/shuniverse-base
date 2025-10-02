@@ -3,6 +3,7 @@ package cn.shuniverse.base.service;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.entity.dto.LogDto;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@ConditionalOnMissingClass("cn.shuniverse.base.service.LogService")
 public class DefaultLogService implements LogService {
     /**
      * 日志操作接口（可打印，可进行入库）
