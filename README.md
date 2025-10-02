@@ -91,3 +91,19 @@ spring:
           config:
             multi-statement-allow: true
 ```
+### 问题
+- 如果遇到tika类找不到的情况请在项目中添加tika依赖
+```xml
+    <!--========apache-tika:文档解析-开始========-->
+    <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-core</artifactId>
+        <version>3.2.3</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parsers-standard-package</artifactId>
+        <version>3.2.3</version>
+    </dependency>
+    <!--========apache-tika:文档解析-结束========-->
+```
