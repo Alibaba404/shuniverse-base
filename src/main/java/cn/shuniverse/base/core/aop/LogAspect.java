@@ -4,6 +4,7 @@ package cn.shuniverse.base.core.aop;
 import cn.hutool.core.util.IdUtil;
 import cn.shuniverse.base.entity.dto.LogDto;
 import cn.shuniverse.base.service.LogService;
+import cn.shuniverse.base.utils.IPUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -13,7 +14,10 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -72,6 +76,14 @@ public class LogAspect {
         Log logAnnotation = method.getAnnotation(Log.class);
         String description = logAnnotation != null ? logAnnotation.value() : "";
         boolean saveParams = logAnnotation != null && logAnnotation.saveParams();
+
+        // 获取请求 IP
+        String clientIp = "-_-";
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (null != attributes) {
+            HttpServletRequest request = attributes.getRequest();
+            clientIp = IPUtil.getClientIp(request);
+        }
         logService.logOperation(LogDto.builder()
                 .traceId(traceId)
                 .className(signature.getDeclaringTypeName())
@@ -83,6 +95,7 @@ public class LogAspect {
                 .description(description)
                 .saveParams(saveParams)
                 .executeAt(LocalDateTime.now())
+                .ip(clientIp)
                 .build());
     }
 
