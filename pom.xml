@@ -147,6 +147,13 @@
         </dependency>
         <!--========apache-tika:文档解析-结束========-->
 
+        <!--国密算法需要引入Bouncy Castle库的依赖。-->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+
     </dependencies>
 
     <dependencyManagement>
