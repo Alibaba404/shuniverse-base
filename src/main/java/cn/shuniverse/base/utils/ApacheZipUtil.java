@@ -30,6 +30,7 @@ public class ApacheZipUtil {
 
     private ApacheZipUtil() {
     }
+
     /**
      * 压缩文件
      *
@@ -82,7 +83,7 @@ public class ApacheZipUtil {
         }
         // 如果压缩文件已经存在，则重命名将要生产的压缩文件
         if (zip.exists()) {
-            String timestamp = MeDateUtil.timestamp2DateString(Clock.systemUTC().millis(), DateConstants.DATETIME_FORMAT_SIMPLE);
+            String timestamp = DatetimeUtil.timestamp2DateString(Clock.systemUTC().millis(), DateConstants.DATETIME_FORMAT_SIMPLE);
             // 获取文件名（不含 .zip后缀）
             String baseName = zip.getName().replaceFirst("\\.zip$", "");
             // 构造新的文件名：如 image_20250622164501.zip
