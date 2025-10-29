@@ -46,4 +46,38 @@ public class NumberUtil {
         }
         return result;
     }
+
+
+    /**
+     * 将数字转换为指定长度的数字
+     *
+     * @param value  数字
+     * @param length 长度
+     * @param digit  填充的数字
+     * @return
+     */
+    public static String toCompleteNumber(int value, int length, String digit) {
+        String val = String.valueOf(value);
+        if (val.length() > length) {
+            return val;
+        }
+        if (value < 0) {
+            return val;
+        }
+        if (digit == null || digit.isEmpty()) {
+            digit = "0";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(digit.repeat(length));
+        builder.replace(builder.length() - val.length(), builder.length(), val);
+        return builder.toString();
+    }
+
+    public static String toCompleteNumber(int value, int length) {
+        return toCompleteNumber(value, length, "0");
+    }
+
+    public static String toCompleteNumber4Bit(int value) {
+        return toCompleteNumber(value, 4, "0");
+    }
 }
