@@ -31,4 +31,15 @@ public class StringUtil extends StringUtils {
     public static String encoding(String character, String charset) throws UnsupportedEncodingException {
         return URLEncoder.encode(character, charset);
     }
+
+    /**
+     * 创建字符串
+     *
+     * @param bytes   字节数组
+     * @param charset 字符集
+     * @return
+     */
+    public static String newString(byte[] bytes, Charset charset) {
+        return new String(bytes, charset);
+    }
 }
