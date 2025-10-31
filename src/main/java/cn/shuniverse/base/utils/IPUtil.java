@@ -1,14 +1,17 @@
 package cn.shuniverse.base.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.lionsoul.ip2region.xdb.Searcher;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
-import java.util.regex.Matcher;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -30,12 +33,15 @@ public class IPUtil {
     /**
      * 判断是否为合法 IP
      */
-    public static boolean isLegal(String ipAddress) {
-        String ip = "([1-9]|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}";
-        Pattern pattern = Pattern.compile(ip);
-        Matcher matcher = pattern.matcher(ipAddress);
-        return matcher.matches();
+    private static final Pattern IP_PATTERN = Pattern.compile("([1-9]?\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}");
+
+    public static boolean isValid(String ip) {
+        if (ip == null) {
+            return false;
+        }
+        return IP_PATTERN.matcher(ip).matches();
     }
+
 
     /**
      * 获取客户端IP地址的方法
@@ -71,7 +77,6 @@ public class IPUtil {
     /**
      * 加载ip2region
      */
-    @PostConstruct
     private static void initIp2Region() {
         try {
             InputStream inputStream = new ClassPathResource("/ip2region.xdb").getInputStream();
@@ -90,23 +95,24 @@ public class IPUtil {
      * @return
      */
     public static String getIPRegion(String ip) {
-        boolean legal = isLegal(ip);
+        boolean legal = isValid(ip);
         if (legal) {
             initIp2Region();
             try {
-                String searchIpInfo = searcher.search(ip);
-                String[] strings = searchIpInfo.split("\\|");
-                if (strings.length > 0) {
-                    if ("中国".equals(strings[0])) {
-                        return strings[2];
-                    } else if ("0".equals(strings[0])) {
-                        if ("内网IP".equals(strings[4])) {
+                String infoStr = searcher.search(ip);
+                log.info("ip2region: {}", infoStr);
+                String[] infos = infoStr.split("\\|");
+                if (infos.length > 0) {
+                    if ("中国".equals(infos[0])) {
+                        return infos[2];
+                    } else if ("0".equals(infos[0])) {
+                        if ("内网IP".equals(infos[4])) {
                             return "内网";
                         } else {
                             return "未知";
                         }
                     } else {
-                        return strings[0];
+                        return infos[0];
                     }
                 }
 
@@ -117,5 +123,36 @@ public class IPUtil {
         } else {
             return ip;
         }
+    }
+
+    public static List<String> ipRegions(String ip) {
+        boolean legal = isValid(ip);
+        if (legal) {
+            initIp2Region();
+            try {
+                String infoStr = searcher.search(ip);
+                log.info("ip2region: {}", infoStr);
+                List<String> infos = new ArrayList<>(List.of(StringUtils.split(infoStr, "|")));
+                if (!infos.isEmpty()) {
+                    return infos.stream().filter(i -> !"0".equals(i)).toList();
+                }
+                return infos;
+            } catch (Exception e) {
+                log.error("获取ip所属地址失败", e);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public static String ipRegion(String ip) {
+        List<String> infos = ipRegions(ip);
+        if (infos.size() > 2) {
+            return infos.get(2);
+        }
+        String info = infos.get(0);
+        if ("内网IP".equals(info)) {
+            return "内网";
+        }
+        return ip;
     }
 }
