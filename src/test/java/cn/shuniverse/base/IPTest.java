@@ -17,6 +17,6 @@ public class IPTest {
     public void test1() {
         // 韩国|0|首尔|首尔|0
         // 中国|0|四川省|成都市|移动
-        log.info("ip: {}", IPUtil.ipRegion("183.222.241.41"));
+        log.info("ip: {}", IPUtil.ipRegion(""));
     }
 }
