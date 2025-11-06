@@ -21,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * Created by 蛮小满Sama at 2025-04-19 11:36
@@ -35,7 +36,7 @@ public class LogAspect {
     private final LogService logService;
 
     @Autowired
-    public LogAspect(LogService logService) {
+    public LogAspect(@Autowired(required = false) LogService logService) {
         this.logService = logService;
     }
 
@@ -83,6 +84,10 @@ public class LogAspect {
         if (null != attributes) {
             HttpServletRequest request = attributes.getRequest();
             clientIp = IPUtil.getClientIp(request);
+        }
+        if (Objects.isNull(logService)) {
+            log.warn("未找到 LogService 实现类，日志未执行持久化操作");
+            return;
         }
         logService.logOperation(LogDto.builder()
                 .traceId(traceId)
