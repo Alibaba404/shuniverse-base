@@ -1,6 +1,9 @@
 package cn.shuniverse.base.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -105,5 +108,20 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
      */
     public static void readUtf8Lines(InputStream inputStream, Consumer<String> lineHandler) throws IOException {
         readLines(inputStream, StandardCharsets.UTF_8, lineHandler);
+    }
+
+    /**
+     * 在jar包运行目录下创建目录
+     *
+     * @param path 目录路径
+     */
+    public static File mkRelativeDirectory(String path) {
+        if (StringUtils.isBlank(path)) {
+            return null;
+        }
+        // 获取jar运行目录
+        String absolutePath = new File("").getAbsolutePath();
+        // 创建目录
+        return mkdir(absolutePath + File.separator + path);
     }
 }
