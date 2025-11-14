@@ -58,8 +58,7 @@ public class CaptchaService {
      * @param model    验证码参数
      * @param timeout  RedisKey过期时间
      * @param timeUnit 过期时间单位
-     * @param len      验证码长度
-     * @return
+     * @return 验证码数据
      */
     public CaptchaDto captcha(CaptchaPo model, long timeout, TimeUnit timeUnit) {
         CaptchaDto dto = this.handleCaptcha(this.captchaClassify, model);
