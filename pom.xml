@@ -103,6 +103,12 @@
             <artifactId>easy-captcha</artifactId>
             <version>1.6.2</version>
         </dependency>
+        <!--解决JDK11及以上移除Nashorn-->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.4</version>
+        </dependency>
 
         <!-- ====================Redis相关依赖-开始==================== -->
         <!--redis：后期可替换为sa-token-->
