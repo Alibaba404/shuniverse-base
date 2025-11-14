@@ -34,7 +34,8 @@ public enum RCode implements IBisRCode {
     SYS_DICT_TYPE_EXISTED(1009, "字典类型已存在"),
     USER_CAPTCHA_EXPIRED(1010, "验证码已过期"),
     USER_CAPTCHA_NOT_MATCHED(1011, "验证码不匹配"),
-    USER_CAPTCHA_SEND_ERROR(1012, "验证码发送失败");
+    USER_CAPTCHA_SEND_ERROR(1012, "验证码发送失败"),
+    CAPTCHA_CLASSIFY_ERROR(1013, "不支持的验证码类型");
 
     // 响应码
     private final Integer code;

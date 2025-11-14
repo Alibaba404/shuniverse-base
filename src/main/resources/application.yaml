@@ -6,3 +6,7 @@ security:
     expire-access: 900000
     # 7天
     expire-refresh: 604800000
+# 验证码参数
+captcha:
+  classify: arithmetic
+  len: 2

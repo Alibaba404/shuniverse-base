@@ -8,11 +8,17 @@ import cn.shuniverse.base.core.resp.RCode;
 import cn.shuniverse.base.entity.dto.CaptchaDto;
 import cn.shuniverse.base.entity.po.CaptchaPo;
 import cn.shuniverse.base.utils.RedisUtil;
+import com.wf.captcha.ArithmeticCaptcha;
+import com.wf.captcha.ChineseCaptcha;
+import com.wf.captcha.ChineseGifCaptcha;
 import com.wf.captcha.SpecCaptcha;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -21,8 +27,16 @@ import java.util.concurrent.TimeUnit;
  * @author 蛮小满Sama
  * @description 验证码服务
  */
+@Slf4j
 @Service
 public class CaptchaService {
+
+    @Value("${captcha.classify:spec}")
+    private String captchaClassify;
+
+    @Value("${captcha.len:5}")
+    private int len;
+
     private final MailService mailService;
 
     @Autowired
@@ -38,18 +52,59 @@ public class CaptchaService {
         return captcha(model, timeout, TimeUnit.MINUTES);
     }
 
+    /**
+     * 生成验证码
+     *
+     * @param model    验证码参数
+     * @param timeout  RedisKey过期时间
+     * @param timeUnit 过期时间单位
+     * @param len      验证码长度
+     * @return
+     */
     public CaptchaDto captcha(CaptchaPo model, long timeout, TimeUnit timeUnit) {
-        return captcha(model, timeout, timeUnit, 5);
-    }
-
-    public CaptchaDto captcha(CaptchaPo model, long timeout, TimeUnit timeUnit, int len) {
-        SpecCaptcha specCaptcha = new SpecCaptcha(model.getWidth(), model.getHeight(), len);
-        String verCode = specCaptcha.text().toLowerCase();
+        CaptchaDto dto = this.handleCaptcha(this.captchaClassify, model);
+        if (Objects.isNull(dto)) {
+            throw BisException.me(RCode.CAPTCHA_CLASSIFY_ERROR);
+        }
         String key = IdUtil.fastSimpleUUID();
         // 存入redis并设置过期时间为5分钟
-        RedisUtil.set(RedisKeyConstants.CAPTCHA_CODE_PREFIX + key, verCode, timeout, timeUnit);
+        RedisUtil.set(RedisKeyConstants.CAPTCHA_CODE_PREFIX + key, dto.getKey(), timeout, timeUnit);
         // 将key和base64返回给前端
-        return new CaptchaDto(key, specCaptcha.toBase64());
+        return dto;
+    }
+
+    /**
+     * 处理验证码
+     *
+     * @param classify 验证码类型：spec、chinese、chinese_gif、arithmetic
+     * @param model    验证码参数
+     * @return 验证码数据
+     */
+    private CaptchaDto handleCaptcha(String classify, CaptchaPo model) {
+        Integer width = model.getWidth();
+        Integer height = model.getHeight();
+        switch (classify) {
+            case "spec" -> {
+                SpecCaptcha captcha = new SpecCaptcha(width, height, this.len);
+                return new CaptchaDto(captcha.text(), captcha.toBase64());
+            }
+            case "chinese" -> {
+                ChineseCaptcha captcha = new ChineseCaptcha(width, height, this.len);
+                return new CaptchaDto(captcha.text(), captcha.toBase64());
+            }
+            case "chinese_gif" -> {
+                ChineseGifCaptcha captcha = new ChineseGifCaptcha(width, height, this.len);
+                return new CaptchaDto(captcha.text(), captcha.toBase64());
+            }
+            case "arithmetic" -> {
+                ArithmeticCaptcha captcha = new ArithmeticCaptcha(width, height, this.len);
+                // 获取运算的公式：3+2=?
+                captcha.getArithmeticString();
+                return new CaptchaDto(captcha.text(), captcha.toBase64());
+            }
+            default -> log.error("未定义的验证码类型: {}", classify);
+        }
+        return null;
     }
 
     /**
