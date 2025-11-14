@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.mail.MessagingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +38,9 @@ public class CaptchaService {
 
     @Value("${captcha.len:5}")
     private int len;
+
+    private static final String K_VALUE = "text";
+    private static final String K_BASE64 = "base64";
 
     private final MailService mailService;
 
@@ -61,15 +66,15 @@ public class CaptchaService {
      * @return 验证码数据
      */
     public CaptchaDto captcha(CaptchaPo model, long timeout, TimeUnit timeUnit) {
-        CaptchaDto dto = this.handleCaptcha(this.captchaClassify, model);
-        if (Objects.isNull(dto)) {
+        Map<String, String> data = this.handleCaptcha(this.captchaClassify, model);
+        if (data.isEmpty()) {
             throw BisException.me(RCode.CAPTCHA_CLASSIFY_ERROR);
         }
         String key = IdUtil.fastSimpleUUID();
         // 存入redis并设置过期时间为5分钟
-        RedisUtil.set(RedisKeyConstants.CAPTCHA_CODE_PREFIX + key, dto.getKey(), timeout, timeUnit);
+        RedisUtil.set(RedisKeyConstants.CAPTCHA_CODE_PREFIX + key, data.get(K_VALUE), timeout, timeUnit);
         // 将key和base64返回给前端
-        return dto;
+        return new CaptchaDto(key, data.get(K_BASE64));
     }
 
     /**
@@ -79,31 +84,31 @@ public class CaptchaService {
      * @param model    验证码参数
      * @return 验证码数据
      */
-    private CaptchaDto handleCaptcha(String classify, CaptchaPo model) {
+    private Map<String, String> handleCaptcha(String classify, CaptchaPo model) {
         Integer width = model.getWidth();
         Integer height = model.getHeight();
         switch (classify) {
             case "spec" -> {
                 SpecCaptcha captcha = new SpecCaptcha(width, height, this.len);
-                return new CaptchaDto(captcha.text(), captcha.toBase64());
+                return Map.of(K_VALUE, captcha.text(), K_BASE64, captcha.toBase64());
             }
             case "chinese" -> {
                 ChineseCaptcha captcha = new ChineseCaptcha(width, height, this.len);
-                return new CaptchaDto(captcha.text(), captcha.toBase64());
+                return Map.of(K_VALUE, captcha.text(), K_BASE64, captcha.toBase64());
             }
             case "chinese_gif" -> {
                 ChineseGifCaptcha captcha = new ChineseGifCaptcha(width, height, this.len);
-                return new CaptchaDto(captcha.text(), captcha.toBase64());
+                return Map.of(K_VALUE, captcha.text(), K_BASE64, captcha.toBase64());
             }
             case "arithmetic" -> {
                 ArithmeticCaptcha captcha = new ArithmeticCaptcha(width, height, this.len);
                 // 获取运算的公式：3+2=?
                 captcha.getArithmeticString();
-                return new CaptchaDto(captcha.text(), captcha.toBase64());
+                return Map.of(K_VALUE, captcha.text(), K_BASE64, captcha.toBase64());
             }
             default -> log.error("未定义的验证码类型: {}", classify);
         }
-        return null;
+        return new HashMap<>();
     }
 
     /**
