@@ -1,6 +1,7 @@
 package cn.shuniverse.base.core.exception;
 
 
+import cn.shuniverse.base.core.resp.IBisRCode;
 import cn.shuniverse.base.core.resp.R;
 import cn.shuniverse.base.core.resp.RCode;
 

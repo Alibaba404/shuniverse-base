@@ -10,3 +10,10 @@ security:
 captcha:
   classify: arithmetic
   len: 2
+
+# minio存储服务
+minio:
+  access-key: minio
+  secret-key: 123456
+  endpoint: http://127.0.0.1:9000
+  bucket:  test

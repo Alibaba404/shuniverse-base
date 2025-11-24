@@ -1,4 +1,4 @@
-package cn.shuniverse.base.core.exception;
+package cn.shuniverse.base.core.resp;
 
 /**
  * Created by 蛮小满Sama at 2025-06-19 15:36

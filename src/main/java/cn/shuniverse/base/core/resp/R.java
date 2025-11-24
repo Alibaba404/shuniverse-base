@@ -1,7 +1,8 @@
 package cn.shuniverse.base.core.resp;
 
 
-import cn.shuniverse.base.core.exception.IBisRCode;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.lang.Nullable;
 
 /**
@@ -10,6 +11,8 @@ import org.springframework.lang.Nullable;
  * @author 蛮小满Sama
  * @description 响应类
  */
+@Setter
+@Getter
 public class R<T> {
     /**
      * 响应代码
@@ -27,38 +30,6 @@ public class R<T> {
      * 响应数据
      */
     private T data;
-
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public Boolean getSuccess() {
-        return success;
-    }
-
-    public void setSuccess(Boolean success) {
-        this.success = success;
-    }
 
     public R(Integer code, String message, Boolean success, T data) {
         this.code = code;

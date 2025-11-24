@@ -1,7 +1,5 @@
 package cn.shuniverse.base.core.resp;
 
-import cn.shuniverse.base.core.exception.IBisRCode;
-
 /**
  * Created by 蛮小满Sama at 2024-02-16 13:05
  *
@@ -35,7 +33,11 @@ public enum RCode implements IBisRCode {
     USER_CAPTCHA_EXPIRED(1010, "验证码已过期"),
     USER_CAPTCHA_NOT_MATCHED(1011, "验证码不匹配"),
     USER_CAPTCHA_SEND_ERROR(1012, "验证码发送失败"),
-    CAPTCHA_CLASSIFY_ERROR(1013, "不支持的验证码类型");
+    CAPTCHA_CLASSIFY_ERROR(1013, "不支持的验证码类型"),
+    FILE_EMPTY(1014, "文件不存在！T_T"),
+    FILE_UPLOAD_ERROR(1015, "文件上传失败！T_T"),
+    FILE_DELETE_ERROR(1016, "文件删除失败！T_T"),
+    FILE_DOWNLOAD_ERROR(1017, "文件下载错误！T_T");
 
     // 响应码
     private final Integer code;
