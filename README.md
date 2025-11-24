@@ -10,6 +10,7 @@
 - 验证码服务
 - 各种工具类
 - 全局异常拦截
+- 文件存储服务
 
 ## 使用方法
 
@@ -94,6 +95,8 @@ spring:
 ### 问题
 - 如果遇到tika类找不到的情况请在项目中添加tika依赖
 ```xml
+
+<dependencies>
     <!--========apache-tika:文档解析-开始========-->
     <dependency>
         <groupId>org.apache.tika</groupId>
@@ -106,4 +109,14 @@ spring:
         <version>3.2.3</version>
     </dependency>
     <!--========apache-tika:文档解析-结束========-->
+</dependencies>
 ```
+### 更新日志
+- 2025-11-24 添加了文件存储服务
+    ```java
+    @Value("${file.storage.type:local}")
+    private String fileStorageClassifyString;
+    private final FileStorageStrategy fileStorageStrategy;
+    // 在需要文件存储服务时调用   
+    IFileStorageService fileStorageService = fileStorageStrategy.peek(fileStorageClassifyString);
+    ```
