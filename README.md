@@ -25,7 +25,9 @@
 ```
 
 ## 部分配置以及依赖
+
 ### 邮件配置
+
 ```yaml
 spring:
   # 邮件配置
@@ -40,7 +42,9 @@ spring:
           starttls:
             enable: true
 ```
+
 ### 数据库配置
+
 ```pom.xml
 <!--=========数据库相关依赖-开始=========-->
 <dependency>
@@ -80,7 +84,7 @@ spring:
         url-pattern: /druid/*
         # 控制台管理用户名和密码
         login-username: aikuiba
-        login-password: 
+        login-password:
       filter:
         stat:
           enabled: true
@@ -92,8 +96,11 @@ spring:
           config:
             multi-statement-allow: true
 ```
+
 ### 问题
+
 - 如果遇到tika类找不到的情况请在项目中添加tika依赖
+
 ```xml
 
 <dependencies>
@@ -111,8 +118,11 @@ spring:
     <!--========apache-tika:文档解析-结束========-->
 </dependencies>
 ```
+
 ### 更新日志
+
 - 2025-11-24 添加了文件存储服务
+
     ```java
     @Value("${file.storage.type:local}")
     private String fileStorageClassifyString;
@@ -120,3 +130,26 @@ spring:
     // 在需要文件存储服务时调用   
     IObjectStorageStrategyService fileStorageService = fileStorageStrategy.peek(fileStorageClassifyString);
     ```
+- 2025-11-27 新增限流器
+  <br/> 使用步骤：
+  1. 注册限流拦截器
+  ```java
+  @Configuration
+  public class WebMvcConfig implements WebMvcConfigurer {
+    private final RateLimiterInterceptor rateLimiterInterceptor;
+  
+    public WebMvcConfig(RateLimiterInterceptor rateLimiterInterceptor) {
+      this.rateLimiterInterceptor = rateLimiterInterceptor;
+    }
+  
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+      // 添加限流拦截器
+      registry.addInterceptor(rateLimiterInterceptor)
+              .addPathPatterns("/**")
+              .excludePathPatterns(Collections.emptyList());
+    }
+  }
+  
+  ```
+  2. 在需要限流的接口使用`@RateLimiter`注解即可
