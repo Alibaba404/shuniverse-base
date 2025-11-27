@@ -116,7 +116,7 @@ spring:
     ```java
     @Value("${file.storage.type:local}")
     private String fileStorageClassifyString;
-    private final FileStorageStrategy fileStorageStrategy;
+    private final ObjectStorageStrategy fileStorageStrategy;
     // 在需要文件存储服务时调用   
-    IFileStorageService fileStorageService = fileStorageStrategy.peek(fileStorageClassifyString);
+    IObjectStorageStrategyService fileStorageService = fileStorageStrategy.peek(fileStorageClassifyString);
     ```
