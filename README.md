@@ -11,16 +11,15 @@
 - 各种工具类
 - 全局异常拦截
 - 文件存储服务
+- 限流器
 
 ## 使用方法
-
-将项目拉取到本地--》mvn clean install 安装到本地并在项目中添加依赖
 
 ```pom.xml
 <dependency>
     <groupId>cn.shuniverse</groupId>
     <artifactId>shuniverse-base</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 

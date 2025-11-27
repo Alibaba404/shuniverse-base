@@ -6,7 +6,56 @@
 
     <groupId>cn.shuniverse</groupId>
     <artifactId>shuniverse-base</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>shuniverse-base</name>
+    <description>基础包</description>
+    <url>https://github.com/Alibaba404/shuniverse-base</url>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/Alibaba404/shuniverse-base/issues</url>
+    </issueManagement>
+    <inceptionYear>2025</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <!-- 3. 开发者信息（可选，便于他人识别） -->
+    <developers>
+        <developer>
+            <id>Alibaba404</id>
+            <name>蛮小满Sama</name>
+            <email>VIP20200825@163.com</email>
+        </developer>
+    </developers>
+
+    <!-- 4. SCM 配置（关联 GitHub 仓库，必须） -->
+    <scm>
+        <connection>scm:git:https://github.com/Alibaba404/shuniverse-base.git</connection>
+        <developerConnection>scm:git:git@github.com:Alibaba404/shuniverse-base.git</developerConnection>
+        <url>https://github.com/Alibaba404/shuniverse-base</url>
+        <tag>v${project.version}</tag>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>sonatype-shuniverse</id>
+            <name>Maven Central Staging</name>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <snapshotRepository>
+            <id>sonatype-shuniverse</id>
+            <name>Maven Central Snapshots</name>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+
+    </distributionManagement>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -21,6 +70,7 @@
         <hutool.version>5.8.26</hutool.version>
         <minio.version>7.1.0</minio.version>
     </properties>
+
     <dependencies>
         <!--SpringMVC-->
         <dependency>
@@ -216,6 +266,16 @@
     <!--构建选项-->
     <build>
         <plugins>
+            <!-- 编译插件（指定 JDK 版本，避免兼容性问题） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
             <!-- 打包源码 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -230,7 +290,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <!-- 打包Javadoc -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -253,6 +312,48 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- gpg plugin,用于签名认证 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 发布到私服时需要注释掉下面两个插件 -->
+            <!--staging puglin,用于自动执行发布阶段(免手动)-->
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <!-- 这里的publishingServerId是在settings.xml中配置的server认证信息 -->
+                    <publishingServerId>sonatype-shuniverse</publishingServerId>
+                    <!-- 这里的autoPublish是自动发布，而不是手动发布 -->
+                    <autoPublish>true</autoPublish>
+                    <!-- 这里的waitUntil配置为published是等待发布完成，因为发布完成的时间比较长，所以可以不加这个参数 -->
+                    <!--                    <waitUntil>published</waitUntil>-->
+                    <!-- 这里的deploymentName是发布到中央仓库的名称 -->
+                    <deploymentName>${project.groupId}:${project.artifactId}:${project.version}</deploymentName>
+                </configuration>
+            </plugin>
+            <!-- release plugin,用于发布到release仓库部署插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
+            </plugin>
+
         </plugins>
     </build>
 </project>
