@@ -1,12 +1,15 @@
 package cn.shuniverse.base.service.impl;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.core.exception.BisException;
 import cn.shuniverse.base.core.resp.RCode;
+import cn.shuniverse.base.entity.dto.ObjectStorageDto;
 import cn.shuniverse.base.entity.enums.FilePrivacyCategoryEnum;
 import cn.shuniverse.base.entity.enums.FileStorageClassifyEnum;
-import cn.shuniverse.base.service.IFileStorageService;
+import cn.shuniverse.base.service.IObjectStorageStrategyService;
 import cn.shuniverse.base.utils.MinioUtil;
 import io.minio.*;
 import io.minio.errors.*;
@@ -22,6 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by 蛮小满Sama at 2025-11-24 10:03
@@ -31,7 +37,7 @@ import java.security.NoSuchAlgorithmException;
  */
 @Slf4j
 @Service
-public class MinioFileStorageServiceImpl implements IFileStorageService {
+public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStrategyService {
 
     // 账号
     @Value("${minio.access-key}")
@@ -60,6 +66,35 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
         return FileStorageClassifyEnum.MINIO.getCode();
     }
 
+    /**
+     * 构建文件路径
+     *
+     * @param filename           文件名
+     * @param time               时间
+     * @param fileSourceCategory 文件权限
+     * @return 文件路径
+     */
+    private String buildFilePath(String filename, Date time, String fileSourceCategory) {
+        if (null == time) {
+            time = new Date();
+        }
+        // 获取文件后缀
+        String extensionName = FileUtil.extName(filename);
+        // 日期转文件夹
+        String dateString = DateUtil.format(time, "yyyy/MM/dd");
+        // 拼接存储路径
+//        return String.format("/%s/%s/%s.%s", fileSourceCategory, dateString, IdUtil.fastSimpleUUID(), extensionName);
+        return "/" + fileSourceCategory + "/" + dateString + "/" + IdUtil.fastSimpleUUID() + "." + extensionName;
+    }
+
+    private String getCosShortPath(String url, String bucket) {
+        // 创建匹配器对象
+        Matcher m = Pattern.compile(bucket + "(.*)").matcher(url);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
+    }
 
     /**
      * 获取COS文件短路径
@@ -67,9 +102,45 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
      * @param url 文件地址
      * @return 不含bucket的短路径
      */
-    @Override
     public String getCosShortPath(String url) {
         return getCosShortPath(url, bucket);
+    }
+
+    private String upload(MultipartFile file, String filePath) {
+        try (InputStream inputStream = file.getInputStream()) {
+            // 文件的MIME类型
+            String mimeType = file.getContentType();
+            if (StringUtils.isBlank(mimeType)) {
+                mimeType = "text/plain";
+            }
+            PutObjectArgs putObjectArgs = PutObjectArgs.builder()
+                    // 文件名
+                    .object(filePath)
+                    // 文件类型
+                    .contentType(mimeType)
+                    // 存储桶名
+                    .bucket(bucket)
+                    // 文件流，以及大小，-1代表不分片
+                    .stream(inputStream, file.getSize(), -1)
+                    .build();
+            //执行上传
+            ObjectWriteResponse objectWriteResponse = minioClient.putObject(putObjectArgs);
+            log.info("上传结果: {}", objectWriteResponse.object());
+            //上传之后的文件地址是：
+            String fileUrl = String.format("%s/%s%s", endpoint, bucket, filePath);
+            log.info("文件地址 :{}", fileUrl);
+            return fileUrl;
+        } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
+            log.error("Error occurred: {}", e.getMessage());
+            throw BisException.me(RCode.FILE_UPLOAD_ERROR);
+        }
+    }
+
+    private String getFilename(String fileUrl) {
+        if (fileUrl != null) {
+            return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        }
+        return null;
     }
 
     /**
@@ -80,54 +151,36 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
      * @return 文件路径
      */
     @Override
-    public String uploadCommon(MultipartFile file, String buildFilePath) throws ServerException, InvalidBucketNameException, InsufficientDataException, ErrorResponseException,
-            IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, RegionConflictException {
-        // 1. 检查 Bucket 是否存在，不存在则创建
-        if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-        }
+    public ObjectStorageDto uploadCommon(MultipartFile file, String buildFilePath) {
         if (null == file) {
             throw BisException.me(RCode.FILE_EMPTY);
         }
-        String filePath;
-        try (InputStream inputStream = file.getInputStream()) {
-            // 文件的MIME类型
-            String mimeType = file.getContentType();
-            if (StringUtils.isBlank(mimeType)) {
-                mimeType = "text/plain";
+        String fileUrl;
+        try {
+            // 1. 检查 Bucket 是否存在，不存在则创建
+            if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
-            PutObjectArgs putObjectArgs = PutObjectArgs.builder()
-                    //文件名
-                    .object(buildFilePath)
-                    //文件类型
-                    .contentType(mimeType)
-                    //存储目录名
-                    .bucket(bucket)
-                    //文件流，以及大小，-1代表不分片
-                    .stream(inputStream, file.getSize(), -1)
-                    .build();
-            //执行上传
-            ObjectWriteResponse objectWriteResponse = minioClient.putObject(putObjectArgs);
-            log.info("上传结果: {}", objectWriteResponse.object());
-            //上传之后的文件地址是：
-            filePath = String.format("%s/%s%s", endpoint, bucket, buildFilePath);
-            log.info("文件地址 :{}", filePath);
-        } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("Error occurred: {}", e.getMessage());
+            fileUrl = this.upload(file, buildFilePath);
+        } catch (Exception e) {
+            log.error("文件上传失败！QaQ", e);
             throw BisException.me(RCode.FILE_UPLOAD_ERROR);
         }
-        return filePath;
+        return new ObjectStorageDto()
+                .setOriginFileName(file.getOriginalFilename())
+                .setFilename(this.getFilename(fileUrl))
+                .setFilePath(this.getCosShortPath(fileUrl))
+                .setFileUrl(fileUrl)
+                .setFileSize(file.getSize());
     }
 
     @Override
-    public String upload(MultipartFile file) throws RegionConflictException, ServerException, InvalidBucketNameException, InsufficientDataException, ErrorResponseException,
-            IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, InvalidExpiresRangeException {
-        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), null));
+    public ObjectStorageDto uploadPrivate(MultipartFile file) {
+        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), null, FilePrivacyCategoryEnum.PRIVATE.getCode()));
     }
 
     @Override
-    public String uploadPublic(MultipartFile file) throws RegionConflictException, ServerException, InvalidBucketNameException, InsufficientDataException, ErrorResponseException
-            , IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException, InvalidExpiresRangeException {
+    public ObjectStorageDto uploadPublic(MultipartFile file) {
         return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), null, FilePrivacyCategoryEnum.PUBLIC.getCode()));
     }
 
@@ -138,7 +191,7 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
      * @return true/false
      */
     @Override
-    public boolean deleteFile(String filePath) {
+    public boolean delete(String filePath) {
         try {
             RemoveObjectArgs removeObjectArgs = RemoveObjectArgs.builder()
                     .object(filePath)
@@ -158,7 +211,7 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
     }
 
     @Override
-    public File downloadFile(String filePath) {
+    public File download(String filePath) {
         try {
             File tempFile = FileUtil.file(filePath);
             minioClient.downloadObject(DownloadObjectArgs.builder()
@@ -178,18 +231,22 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
     /**
      * 下载文件方法
      *
-     * @param objectName 文件名
+     * @param filePath 文件名
      * @return InputStream
      */
     @Override
-    public InputStream downloadInputStream(String objectName) throws ServerException, InvalidBucketNameException, InsufficientDataException, ErrorResponseException, IOException,
-            NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        return minioClient.getObject(
-                GetObjectArgs.builder()
-                        .bucket(bucket)
-                        .object(objectName)
-                        .build()
-        );
+    public InputStream downloadInputStream(String filePath) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(filePath)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("文件「{}」下载失败!", filePath, e);
+            throw BisException.me(RCode.FILE_DOWNLOAD_ERROR);
+        }
     }
 
     @Override
@@ -197,10 +254,8 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
         try {
             ObjectStat statObject = minioClient.statObject(StatObjectArgs.builder().bucket(bucket).object(filePath).build());
             return statObject.length();
-        } catch (ErrorResponseException | InsufficientDataException | InternalException | InvalidBucketNameException | InvalidKeyException | InvalidResponseException |
-                 IOException | NoSuchAlgorithmException |
-                 ServerException | XmlParserException e) {
-            log.error("文件「{}」获取文件大小失败!Message", filePath, e);
+        } catch (Exception e) {
+            log.error("文件「{}」获取文件大小失败!", filePath, e);
         }
         return 0;
     }
@@ -209,7 +264,7 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
     /**
      * 设置权限
      */
-    public void setBucketPublicReadPolicy(MinioClient instance, String bucketString) throws ServerException,
+    public void setBucketPublicReadPolicy(MinioClient instance, String bucketString, String allowUserName) throws ServerException,
             InvalidBucketNameException, InsufficientDataException,
             ErrorResponseException, IOException,
             NoSuchAlgorithmException, InvalidKeyException,
@@ -221,7 +276,7 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
                         {
                             "Effect": "Allow",
                             "Principal": {
-                                "AWS": ["arn:aws:iam:::user/jnt-maven"]
+                                "AWS": ["arn:aws:iam:::user/#{allowUserName}"]
                             },
                             "Action": [
                                 "s3:DeleteObject",
@@ -237,7 +292,7 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
                         {
                             "Effect": "Allow",
                             "Principal": {
-                                "AWS": ["arn:aws:iam:::user/jnt-maven"]
+                                "AWS": ["arn:aws:iam:::user/#{allowUserName}"]
                             },
                             "Action": [
                                 "s3:ListAllMyBuckets"
@@ -260,7 +315,9 @@ public class MinioFileStorageServiceImpl implements IFileStorageService {
                         }
                     ]
                 }
-                """.replace("#{bucket}", bucketString);
+                """
+                .replace("#{bucket}", bucketString)
+                .replace("#{allowUserName}", allowUserName);
         String jsonStr = JSONUtil.toJsonStr(policy);
         log.info("bucket: {}, policy: {}", bucketString, jsonStr);
         instance.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucketString).config(jsonStr).build());
