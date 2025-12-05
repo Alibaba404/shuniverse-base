@@ -6,6 +6,7 @@ import cn.shuniverse.base.constants.RedisKeyConstants;
 import cn.shuniverse.base.core.exception.BisException;
 import cn.shuniverse.base.core.resp.RCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,6 +116,11 @@ public class RedisUtil implements InitializingBean {
         return template.opsForValue().get(key);
     }
 
+    // 获取 key 的值
+    public static String getString(String key) {
+        return get(key, String.class);
+    }
+
     // 编译器警告已被抑制
     @SuppressWarnings("unchecked")
     public static <T> T get(String key, Class<T> clazz) {
@@ -156,7 +162,7 @@ public class RedisUtil implements InitializingBean {
     // 获取所有匹配的 key
     public static Set<String> keys(String pattern) {
         Set<String> keys = template.keys(pattern);
-        if (CollUtil.isEmpty(keys)) {
+        if (CollectionUtils.isEmpty(keys)) {
             return Collections.emptySet();
         }
         return keys.stream().map(Object::toString).collect(Collectors.toSet());
@@ -211,8 +217,8 @@ public class RedisUtil implements InitializingBean {
      *
      * @param models Redis缓存中的模型列表
      * @param clazz  需要转为的模型类
-     * @param <T>
-     * @return
+     * @param <T>    模型类型
+     * @return 模型列表
      */
     public static <T> List<T> buildModels(List<Object> models, Class<T> clazz) {
         if (CollUtil.isNotEmpty(models)) {
