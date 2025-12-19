@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -111,5 +112,15 @@ public class DatetimeUtil extends DateUtil {
      */
     public static String birthdayCount(String birthday) {
         return String.valueOf(DateUtil.betweenDay(DateUtil.parse(birthday), DateUtil.date(), true));
+    }
+
+    /**
+     * 计算生日倒计时天数
+     *
+     * @param birthday 出生年月
+     * @return 天数
+     */
+    public static String birthdayCount(Date birthday) {
+        return String.valueOf(DateUtil.betweenDay(birthday, DateUtil.date(), true));
     }
 }
