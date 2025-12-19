@@ -167,19 +167,12 @@ public class DatetimeUtil extends DateUtil {
     /**
      * 获取生日倒计时天数
      *
-     * @param birthday 出生年月日（公历）
+     * @param month 公历月份
+     * @param day   公历日期
      * @return 天数
      */
     @SuppressWarnings("all")
-    public static String birthdayCount(String birthday) {
-        if (birthday == null) {
-            return "0";
-        }
-
-        DateTime birthdayObj = DateUtil.parseDate(birthday);
-        int month = DateUtil.month(birthdayObj);
-        int day = DateUtil.dayOfMonth(birthdayObj);
-
+    public static String birthdayCount(int month, int day) {
         // 今天
         DateTime today = DateUtil.date();
         int yearCur = today.year();
