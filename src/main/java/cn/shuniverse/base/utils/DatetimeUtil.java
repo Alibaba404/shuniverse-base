@@ -102,4 +102,14 @@ public class DatetimeUtil extends DateUtil {
         }
         return ChronoUnit.DAYS.between(getLocalDateTime(timeStr), targetLocalDate);
     }
+
+    /**
+     * 计算生日倒计时天数
+     *
+     * @param birthday 出生年月
+     * @return 天数
+     */
+    public static String birthdayCount(String birthday) {
+        return String.valueOf(DateUtil.betweenDay(DateUtil.parse(birthday), DateUtil.date(), true));
+    }
 }
