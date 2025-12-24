@@ -17,17 +17,13 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
     @Bean("redis")
-    public <T> RedisTemplate<String, T> getRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, T> template = new RedisTemplate<>();
+    public RedisTemplate<String, String> getRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
-        // 配置序列化
-        // 使用StringRedisSerializer来序列化和反序列化redis的key值
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        // 使用StringRedisSerializer来序列化和反序列化redis的Hash Key值
         template.setHashKeySerializer(new StringRedisSerializer());
         template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-        // 初始化
         template.afterPropertiesSet();
         return template;
     }

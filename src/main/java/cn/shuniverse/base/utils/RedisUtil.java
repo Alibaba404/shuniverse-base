@@ -1,5 +1,6 @@
 package cn.shuniverse.base.utils;
 
+import afu.org.checkerframework.checker.oigj.qual.O;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.constants.RedisKeyConstants;
@@ -8,6 +9,7 @@ import cn.shuniverse.base.core.resp.RCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +19,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collection;
@@ -39,11 +43,11 @@ import java.util.stream.Collectors;
 @Component
 public class RedisUtil implements InitializingBean {
 
-    private final RedisTemplate<String, Object> injectedTemplate;
-    private static RedisTemplate<String, Object> template;
+    private final RedisTemplate<String, String> injectedTemplate;
+    private static RedisTemplate<String, String> template;
 
     @Autowired
-    RedisUtil(@Qualifier("redis") RedisTemplate<String, Object> injectedTemplate) {
+    RedisUtil(@Qualifier("redis") RedisTemplate<String, String> injectedTemplate) {
         this.injectedTemplate = injectedTemplate;
     }
 
@@ -82,7 +86,10 @@ public class RedisUtil implements InitializingBean {
      * @param value 值
      */
     public static void set(String key, Object value) {
-        template.opsForValue().set(key, value);
+        if (!ObjectUtils.isEmpty(value)) {
+            String jsonStr = JSONUtil.toJsonStr(value);
+            template.opsForValue().set(key, jsonStr);
+        }
     }
 
     /**
@@ -97,7 +104,10 @@ public class RedisUtil implements InitializingBean {
     }
 
     public static void set(String key, Object value, Duration timeout) {
-        template.opsForValue().set(key, value, timeout);
+        if (!ObjectUtils.isEmpty(value)) {
+            String jsonStr = JSONUtil.toJsonStr(value);
+            template.opsForValue().set(key, jsonStr, timeout);
+        }
     }
 
     /**
@@ -108,30 +118,38 @@ public class RedisUtil implements InitializingBean {
      * @param timeout 过期时间
      */
     public static void set(String key, Object value, long timeout, TimeUnit timeUnit) {
-        template.opsForValue().set(key, value, timeout, timeUnit);
+        if (!ObjectUtils.isEmpty(value)) {
+            String jsonStr = JSONUtil.toJsonStr(value);
+            template.opsForValue().set(key, jsonStr, timeout, timeUnit);
+        }
     }
 
-    // 获取 key 的值
+    /**
+     * 兼容原有get方法（返回JSON字符串）
+     */
     public static Object get(String key) {
         return template.opsForValue().get(key);
     }
 
     // 获取 key 的值
     public static String getString(String key) {
-        return get(key, String.class);
+        return template.opsForValue().get(key);
     }
 
-    // 编译器警告已被抑制
-    @SuppressWarnings("unchecked")
+    /**
+     * 获取单个对象（反序列化为指定类型）
+     */
     public static <T> T get(String key, Class<T> clazz) {
-        Object value = template.opsForValue().get(key);
-        if (value == null) {
+        String value = template.opsForValue().get(key);
+        if (StringUtils.isBlank(value)) {
             return null;
         }
-        if (clazz.isInstance(value)) {
-            return (T) value;
+        try {
+            return JSONUtil.toBean(value, clazz);
+        } catch (Exception e) {
+            log.error("Redis反序列化失败, key={}, clazz={}", key, clazz.getName(), e);
+            throw BisException.me(RCode.FAILED.getCode(), "Redis数据反序列化失败：" + e.getMessage());
         }
-        throw new IllegalStateException("Redis中 key=" + key + " 的值不能转换为类型 " + clazz.getName());
     }
 
     // 删除 key
@@ -180,19 +198,6 @@ public class RedisUtil implements InitializingBean {
 
 
     /**
-     * 添加元素到列表的末尾
-     *
-     * @param key   key
-     * @param value 值
-     * @param <V>   值类型
-     */
-    public static <V> void rightPushAll(String key, Collection<V> value) {
-        if (value != null && !value.isEmpty()) {
-            template.opsForList().rightPushAll(key, value.toArray());
-        }
-    }
-
-    /**
      * 验证码校验
      *
      * @param key  验证码key
@@ -208,8 +213,23 @@ public class RedisUtil implements InitializingBean {
         }
     }
 
-    public static List<Object> range(String key, long start, long end) {
+    /**
+     * 获取List指定范围的元素（JSON字符串）
+     */
+    public static List<String> range(String key, long start, long end) {
         return template.opsForList().range(key, start, end);
+    }
+
+    /**
+     * 向List尾部添加多个元素（转为JSON字符串）
+     */
+    public static <V> void rightPushAll(String key, Collection<V> value) {
+        if (value != null && !value.isEmpty()) {
+            List<String> jsonList = value.stream()
+                    .map(JSONUtil::toJsonStr)
+                    .collect(Collectors.toList());
+            template.opsForList().rightPushAll(key, jsonList);
+        }
     }
 
     /**
@@ -220,14 +240,14 @@ public class RedisUtil implements InitializingBean {
      * @param <T>    模型类型
      * @return 模型列表
      */
-    public static <T> List<T> buildModels(List<Object> models, Class<T> clazz) {
-        if (CollUtil.isNotEmpty(models)) {
+    public static <T> List<T> buildModels(List<String> models, Class<T> clazz) {
+        if (CollectionUtils.isNotEmpty(models)) {
             return models.stream()
-                    .map(o -> {
+                    .map(jsonStr -> {
                         try {
-                            return JSONUtil.toBean(JSONUtil.toJsonStr(o), clazz);
+                            return JSONUtil.toBean(jsonStr, clazz);
                         } catch (Exception e) {
-                            log.warn("JSON转换失败: {}", o, e);
+                            log.warn("JSON转换失败: {}", jsonStr, e);
                             throw BisException.me(RCode.FAILED.getCode(), e.getLocalizedMessage());
                         }
                     })
@@ -266,5 +286,32 @@ public class RedisUtil implements InitializingBean {
 
     public static Long execute(RedisScript<Long> limitScript, List<String> keys, int count, int time) {
         return template.execute(limitScript, keys, count, time);
+    }
+
+
+    /**
+     * 获取集合对象（专门解决List<SysDictDataDto>反序列化问题）
+     */
+    public static <T> List<T> list(String key, Class<T> clazz) {
+        String jsonStr = getString(key);
+        if (StringUtils.isBlank(jsonStr)) {
+            return Collections.emptyList();
+        }
+        try {
+            return JSONUtil.toList(jsonStr, clazz);
+        } catch (Exception e) {
+            log.error("Redis反序列化集合失败, key={}, elementType={}", key, clazz.getName(), e);
+            throw BisException.me(RCode.FAILED.getCode(), "Redis集合数据反序列化失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 将JSON字符串转为对象
+     *
+     * @param jsonStr JSON字符串
+     * @param clazz   对象类型
+     */
+    public static <T> T toBean(Object jsonStr, Class<T> clazz) {
+        return JSONUtil.toBean(String.valueOf(jsonStr), clazz);
     }
 }
