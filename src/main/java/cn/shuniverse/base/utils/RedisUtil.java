@@ -144,6 +144,9 @@ public class RedisUtil implements InitializingBean {
         if (StringUtils.isBlank(value)) {
             return null;
         }
+        if (clazz == String.class) {
+            return (T) value;
+        }
         try {
             return JSONUtil.toBean(value, clazz);
         } catch (Exception e) {
