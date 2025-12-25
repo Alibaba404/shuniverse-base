@@ -4,11 +4,14 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -17,9 +20,9 @@ import java.util.function.Consumer;
  * Created by 蛮小满Sama at 2025-06-19 21:55
  *
  * @author 蛮小满Sama
- * @description
+ * @description 我的文件工具类
  */
-public class FileUtil extends cn.hutool.core.io.FileUtil {
+public class FileCustomUtil extends cn.hutool.core.io.FileUtil {
     /**
      * 从输入流中读取内容
      *
@@ -124,4 +127,38 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
         // 创建目录
         return mkdir(absolutePath + File.separator + path);
     }
+
+    /**
+     * 计算文件MD5
+     *
+     * @param file 文件
+     * @return 32位小写MD5字符串
+     * @throws NoSuchAlgorithmException 算法不存在（理论上不会发生）
+     * @throws IOException              文件读取异常
+     */
+    public static String fileMd5(File file) throws NoSuchAlgorithmException, IOException {
+        return fileMd5(new FileInputStream(file));
+    }
+
+    public static String fileMd5(FileInputStream fis) throws NoSuchAlgorithmException, IOException {
+        // 1. 初始化MD5算法
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        // 8KB缓冲区（避免一次性加载大文件）
+        byte[] buffer = new byte[8192];
+        int len;
+        // 2. 流式读取并更新哈希
+        while ((len = fis.read(buffer)) != -1) {
+            md5.update(buffer, 0, len);
+        }
+        fis.close();
+        // 3. 计算哈希结果并转为十六进制字符串
+        byte[] digest = md5.digest();
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest) {
+            // 转为两位十六进制，不足补0
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
 }

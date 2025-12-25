@@ -21,5 +21,9 @@ public class ObjectStorageDto {
     // 访问地址
     private String fileUrl;
     // 文件大小（单位：Byte）
-    private Long fileSize;
+    private long fileSize;
+    // 文件类型
+    private String fileType;
+    // 文件MD5
+    private String fileMd5;
 }

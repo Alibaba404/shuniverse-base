@@ -10,6 +10,8 @@ import cn.shuniverse.base.entity.dto.ObjectStorageDto;
 import cn.shuniverse.base.entity.enums.FilePrivacyCategoryEnum;
 import cn.shuniverse.base.entity.enums.FileStorageClassifyEnum;
 import cn.shuniverse.base.service.IObjectStorageStrategyService;
+import cn.shuniverse.base.utils.CapacityUtil;
+import cn.shuniverse.base.utils.FileCustomUtil;
 import cn.shuniverse.base.utils.MinioUtil;
 import io.minio.*;
 import io.minio.errors.*;
@@ -21,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
@@ -166,7 +169,22 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
             log.error("文件上传失败！QaQ", e);
             throw BisException.me(RCode.FILE_UPLOAD_ERROR);
         }
+        // 文件大小MB
+        double mb = CapacityUtil.bytesToMb(file.getSize());
+        String fileMd5 = "-1";
+        // 小于 10MB才自动计算md5
+        if (mb <= 10) {
+            try {
+                fileMd5 = FileCustomUtil.fileMd5((FileInputStream) file.getInputStream());
+            } catch (NoSuchAlgorithmException | IOException e) {
+                fileMd5 = "-1";
+            } finally {
+                log.info("文件MD5: {}", fileMd5);
+            }
+        }
         return new ObjectStorageDto()
+                .setFileType(file.getContentType())
+                .setFileMd5(fileMd5)
                 .setOriginFileName(file.getOriginalFilename())
                 .setFilename(this.getFilename(fileUrl))
                 .setFilePath(this.getCosShortPath(fileUrl))
