@@ -2,6 +2,8 @@ package cn.shuniverse.base.utils;
 
 import cn.shuniverse.base.constants.SecurityConstants;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * Created by 蛮小满Sama at 2025-06-21 18:25
  *
@@ -49,5 +51,12 @@ public class SecurityUtils {
      */
     public static String getString(String key) {
         return SecurityContextHolder.get(key);
+    }
+
+    /**
+     * 获取请求对象
+     */
+    public static HttpServletRequest getRequest() {
+        return SecurityContextHolder.get(SecurityConstants.HTTP_REQUEST, HttpServletRequest.class);
     }
 }

@@ -46,4 +46,9 @@ public class SecurityConstants extends SystemConstants {
      * 角色权限
      */
     public static final String ROLE_PERMISSION = "ROLE_PERMISSION";
+
+    /**
+     * http请求前缀
+     */
+    public static final String HTTP_REQUEST = "HTTP_REQUEST";
 }
