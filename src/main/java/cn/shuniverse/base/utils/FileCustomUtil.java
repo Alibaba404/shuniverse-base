@@ -1,5 +1,6 @@
 package cn.shuniverse.base.utils;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -141,24 +142,25 @@ public class FileCustomUtil extends cn.hutool.core.io.FileUtil {
     }
 
     public static String fileMd5(FileInputStream fis) throws NoSuchAlgorithmException, IOException {
-        // 1. 初始化MD5算法
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        // 8KB缓冲区（避免一次性加载大文件）
-        byte[] buffer = new byte[8192];
-        int len;
-        // 2. 流式读取并更新哈希
-        while ((len = fis.read(buffer)) != -1) {
-            md5.update(buffer, 0, len);
-        }
-        fis.close();
-        // 3. 计算哈希结果并转为十六进制字符串
-        byte[] digest = md5.digest();
-        StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
-            // 转为两位十六进制，不足补0
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+//        // 1. 初始化MD5算法
+//        MessageDigest md5 = MessageDigest.getInstance("MD5");
+//        // 8KB缓冲区（避免一次性加载大文件）
+//        byte[] buffer = new byte[8192];
+//        int len;
+//        // 2. 流式读取并更新哈希
+//        while ((len = fis.read(buffer)) != -1) {
+//            md5.update(buffer, 0, len);
+//        }
+//        fis.close();
+//        // 3. 计算哈希结果并转为十六进制字符串
+//        byte[] digest = md5.digest();
+//        StringBuilder sb = new StringBuilder();
+//        for (byte b : digest) {
+//            // 转为两位十六进制，不足补0
+//            sb.append(String.format("%02x", b));
+//        }
+//        return sb.toString();
+        return DigestUtils.md5Hex(fis);
     }
 
 }
