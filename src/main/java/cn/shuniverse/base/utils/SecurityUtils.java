@@ -11,6 +11,7 @@ import cn.shuniverse.base.constants.SecurityConstants;
 public class SecurityUtils {
     private SecurityUtils() {
     }
+
     /**
      * 获取用户ID
      */
@@ -41,5 +42,12 @@ public class SecurityUtils {
             return clazz.cast(user);
         }
         return null;
+    }
+
+    /**
+     * 获取指定参数
+     */
+    public static String getString(String key) {
+        return SecurityContextHolder.get(key);
     }
 }
