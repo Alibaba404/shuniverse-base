@@ -185,16 +185,15 @@ public class RedisUtil implements InitializingBean {
         return true;
     }
 
-    public static boolean delete(Collection<String> keys) {
+    public static long delete(Collection<String> keys) {
         if (CollUtil.isNotEmpty(keys)) {
             try {
-                template.delete(keys);
+                return template.delete(keys);
             } catch (Exception e) {
                 log.error("Redis删除数据失败, keys={}", keys, e);
-                return false;
             }
         }
-        return true;
+        return 0;
     }
 
     // 检查 key 是否存在
