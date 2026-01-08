@@ -85,11 +85,18 @@ public class RedisUtil implements InitializingBean {
      * @param key   键
      * @param value 值
      */
-    public static void set(String key, Object value) {
+    public static boolean set(String key, Object value) {
         if (!ObjectUtils.isEmpty(value)) {
             String jsonStr = JSONUtil.toJsonStr(value);
-            template.opsForValue().set(key, jsonStr);
+
+            try {
+                template.opsForValue().set(key, jsonStr);
+            } catch (Exception e) {
+                log.error("Redis设置数据失败, key={}, value={}", key, jsonStr, e);
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -99,15 +106,21 @@ public class RedisUtil implements InitializingBean {
      * @param value   值
      * @param timeout 过期时间
      */
-    public static void set(String key, Object value, long timeout) {
-        set(key, value, timeout, TimeUnit.SECONDS);
+    public static boolean set(String key, Object value, long timeout) {
+        return set(key, value, timeout, TimeUnit.SECONDS);
     }
 
-    public static void set(String key, Object value, Duration timeout) {
+    public static boolean set(String key, Object value, Duration timeout) {
         if (!ObjectUtils.isEmpty(value)) {
             String jsonStr = JSONUtil.toJsonStr(value);
-            template.opsForValue().set(key, jsonStr, timeout);
+            try {
+                template.opsForValue().set(key, jsonStr, timeout);
+            } catch (Exception e) {
+                log.error("Redis设置数据失败, key={}, value={}", key, jsonStr, e);
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -117,11 +130,17 @@ public class RedisUtil implements InitializingBean {
      * @param value   值
      * @param timeout 过期时间
      */
-    public static void set(String key, Object value, long timeout, TimeUnit timeUnit) {
+    public static boolean set(String key, Object value, long timeout, TimeUnit timeUnit) {
         if (!ObjectUtils.isEmpty(value)) {
             String jsonStr = JSONUtil.toJsonStr(value);
-            template.opsForValue().set(key, jsonStr, timeout, timeUnit);
+            try {
+                template.opsForValue().set(key, jsonStr, timeout, timeUnit);
+            } catch (Exception e) {
+                log.error("Redis设置数据失败, key={}, value={}", key, jsonStr, e);
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -156,14 +175,26 @@ public class RedisUtil implements InitializingBean {
     }
 
     // 删除 key
-    public static void delete(String key) {
-        template.delete(key);
+    public static boolean delete(String key) {
+        try {
+            template.delete(key);
+        } catch (Exception e) {
+            log.error("Redis删除数据失败, key={}", key, e);
+            return false;
+        }
+        return true;
     }
 
-    public static void delete(Collection<String> keys) {
+    public static boolean delete(Collection<String> keys) {
         if (CollUtil.isNotEmpty(keys)) {
-            template.delete(keys);
+            try {
+                template.delete(keys);
+            } catch (Exception e) {
+                log.error("Redis删除数据失败, keys={}", keys, e);
+                return false;
+            }
         }
+        return true;
     }
 
     // 检查 key 是否存在
@@ -176,8 +207,8 @@ public class RedisUtil implements InitializingBean {
         return Boolean.TRUE.equals(template.expire(key, timeout, TimeUnit.SECONDS));
     }
 
-    public static void expire(String key, Duration timeout) {
-        template.expire(key, timeout);
+    public static boolean expire(String key, Duration timeout) {
+        return Boolean.TRUE.equals(template.expire(key, timeout));
     }
 
     // 获取所有匹配的 key
@@ -283,8 +314,14 @@ public class RedisUtil implements InitializingBean {
         return JSONUtil.toBean(JSONUtil.toJsonStr(getHash(key, hashKey)), tClass);
     }
 
-    public static void setHash(String key, String hashKey, Object value) {
-        template.opsForHash().put(key, hashKey, value);
+    public static boolean setHash(String key, String hashKey, Object value) {
+        try {
+            template.opsForHash().put(key, hashKey, value);
+        } catch (Exception e) {
+            log.error("Redis设置Hash数据失败, key={}, hashKey={}, value={}", key, hashKey, value, e);
+            return false;
+        }
+        return true;
     }
 
     public static Long execute(RedisScript<Long> limitScript, List<String> keys, int count, int time) {
