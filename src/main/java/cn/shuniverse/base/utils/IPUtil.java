@@ -9,7 +9,6 @@ import org.springframework.util.FileCopyUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -77,9 +76,12 @@ public class IPUtil {
     /**
      * 加载ip2region
      */
-    private static void initIp2Region() {
+    private static void initIp2Region(String xdbPath) {
         try {
-            InputStream inputStream = new ClassPathResource("/ip2region.xdb").getInputStream();
+            if (StringUtils.isBlank(xdbPath)) {
+                xdbPath = "/ip2region.xdb";
+            }
+            InputStream inputStream = new ClassPathResource(xdbPath).getInputStream();
             byte[] bytes = FileCopyUtils.copyToByteArray(inputStream);
             searcher = Searcher.newWithBuffer(bytes);
         } catch (Exception e) {
@@ -87,17 +89,20 @@ public class IPUtil {
         }
     }
 
+    public static String ipRegion(String ip) {
+        return ipRegion(ip, null);
+    }
 
     /**
      * 获取 ip 所属地址
      *
      * @param ip ip
-     * @return
+     * @return ip所属地址
      */
-    public static String getIPRegion(String ip) {
+    public static String ipRegion(String ip, String xdbPath) {
         boolean legal = isValid(ip);
         if (legal) {
-            initIp2Region();
+            initIp2Region(xdbPath);
             try {
                 String infoStr = searcher.search(ip);
                 log.info("ip2region: {}", infoStr);
@@ -128,7 +133,7 @@ public class IPUtil {
     public static List<String> ipRegions(String ip) {
         boolean legal = isValid(ip);
         if (legal) {
-            initIp2Region();
+            initIp2Region(null);
             try {
                 String infoStr = searcher.search(ip);
                 log.info("ip2region: {}", infoStr);
@@ -142,17 +147,5 @@ public class IPUtil {
             }
         }
         return Collections.emptyList();
-    }
-
-    public static String ipRegion(String ip) {
-        List<String> infos = ipRegions(ip);
-        if (infos.size() > 2) {
-            return infos.get(2);
-        }
-        String info = infos.get(0);
-        if ("内网IP".equals(info)) {
-            return "内网";
-        }
-        return ip;
     }
 }

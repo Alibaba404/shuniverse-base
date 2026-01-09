@@ -1,6 +1,5 @@
 package cn.shuniverse.base.utils;
 
-import afu.org.checkerframework.checker.oigj.qual.O;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.constants.RedisKeyConstants;
@@ -9,7 +8,6 @@ import cn.shuniverse.base.core.resp.RCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,7 +19,6 @@ import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
-import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collection;
@@ -352,5 +349,15 @@ public class RedisUtil implements InitializingBean {
      */
     public static <T> T toBean(Object jsonStr, Class<T> clazz) {
         return JSONUtil.toBean(String.valueOf(jsonStr), clazz);
+    }
+
+    /**
+     * 获取剩余的过期时间
+     *
+     * @param key 缓存key
+     * @return 剩余的过期时间
+     */
+    public static long getExpire(String key) {
+        return template.getExpire(key);
     }
 }
