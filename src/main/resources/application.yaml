@@ -1,11 +1,6 @@
-security:
-  jwt:
-    # 32位密钥
-    secret-key: LZVtT5pB1PFfu2A2CsUpI7oIYcj7zfLl
-    # 15分钟
-    expire-access: 900000
-    # 7天
-    expire-refresh: 604800000
+jwt:
+  # 256位密钥
+  secret-key: YJLsqr8RPuBzaGq44HPwX2ZSR0XeHfTiWDx5hZr1WDUafCCCG953uJxBpQgq7ROBiLaMMbeTRYjfseOywlF1WA9fXjuWa8lv2oMEDVKiMaRo9mhBGaaSydH9wdff0GdA95kAfjz2CLK18TokAt4bW3hlEuaDdHA0gp16dlTskwq8JIkkYOgOMdvShlWo3wb1aGUPw260d4dGftB0LkKu3yAl9B9TY59DUZVvDY2aPRrePcDXO7cjciiuSViks7t1
 # 验证码参数
 captcha:
   classify: arithmetic
@@ -16,4 +11,4 @@ minio:
   access-key: minio
   secret-key: 123456
   endpoint: http://127.0.0.1:9000
-  bucket:  test
+  bucket: test

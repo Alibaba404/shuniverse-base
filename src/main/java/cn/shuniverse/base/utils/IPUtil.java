@@ -28,12 +28,11 @@ public class IPUtil {
     private IPUtil() {
     }
 
+    private static final Pattern IP_PATTERN = Pattern.compile("([1-9]?\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}");
 
     /**
      * 判断是否为合法 IP
      */
-    private static final Pattern IP_PATTERN = Pattern.compile("([1-9]?\\d|1\\d{2}|2[0-4]\\d|25[0-5])(\\.(\\d|[1-9]\\d|1\\d{2}|2[0-4]\\d|25[0-5])){3}");
-
     public static boolean isValid(String ip) {
         if (ip == null) {
             return false;
@@ -89,63 +88,50 @@ public class IPUtil {
         }
     }
 
-    public static String ipRegion(String ip) {
+    public static String[] ipRegion(String ip) throws Exception {
         return ipRegion(ip, null);
     }
 
+    public static String[] ipRegion(String ip, String xdbPath) throws Exception {
+        boolean legal = isValid(ip);
+        if (legal) {
+            initIp2Region(xdbPath);
+            String infoStr = searcher.search(ip);
+            log.info("ip2region: {}", infoStr);
+            return infoStr.split("\\|");
+        }
+        return new String[]{};
+    }
+
+    public static String ipSimpleRegion(String ip) {
+        return ipSimpleRegion(ip, null);
+    }
+
     /**
-     * 获取 ip 所属地址
+     * 获取 ip 简单所属地址
      *
      * @param ip ip
      * @return ip所属地址
      */
-    public static String ipRegion(String ip, String xdbPath) {
-        boolean legal = isValid(ip);
-        if (legal) {
-            initIp2Region(xdbPath);
-            try {
-                String infoStr = searcher.search(ip);
-                log.info("ip2region: {}", infoStr);
-                String[] infos = infoStr.split("\\|");
-                if (infos.length > 0) {
-                    if ("中国".equals(infos[0])) {
-                        return infos[2];
-                    } else if ("0".equals(infos[0])) {
-                        if ("内网IP".equals(infos[4])) {
-                            return "内网";
-                        } else {
-                            return "未知";
-                        }
+    public static String ipSimpleRegion(String ip, String xdbPath) {
+        try {
+            String[] infos = ipRegion(ip, xdbPath);
+            if (infos.length > 0) {
+                if ("中国".equals(infos[0])) {
+                    return infos[2];
+                } else if ("0".equals(infos[0])) {
+                    if ("内网IP".equals(infos[4])) {
+                        return "内网";
                     } else {
-                        return infos[0];
+                        return "未知";
                     }
+                } else {
+                    return infos[0];
                 }
-
-            } catch (Exception e) {
-                log.error("获取ip所属地址失败", e);
             }
-            return "未知";
-        } else {
-            return ip;
+        } catch (Exception e) {
+            log.error("获取ip所属地址失败", e);
         }
-    }
-
-    public static List<String> ipRegions(String ip) {
-        boolean legal = isValid(ip);
-        if (legal) {
-            initIp2Region(null);
-            try {
-                String infoStr = searcher.search(ip);
-                log.info("ip2region: {}", infoStr);
-                List<String> infos = new ArrayList<>(List.of(StringUtils.split(infoStr, "|")));
-                if (!infos.isEmpty()) {
-                    return infos.stream().filter(i -> !"0".equals(i)).toList();
-                }
-                return infos;
-            } catch (Exception e) {
-                log.error("获取ip所属地址失败", e);
-            }
-        }
-        return Collections.emptyList();
+        return "未知";
     }
 }
