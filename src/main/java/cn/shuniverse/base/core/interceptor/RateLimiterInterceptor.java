@@ -1,5 +1,6 @@
 package cn.shuniverse.base.core.interceptor;
 
+import cn.hutool.core.date.SystemClock;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.core.annotation.RateLimiter;
 import cn.shuniverse.base.core.resp.R;
@@ -59,9 +60,9 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
      * 清理过期的限流key（防止内存泄漏）
      */
     private void cleanExpiredKeys() {
-        long currentTime = Clock.systemUTC().millis();
+        long timeCur = SystemClock.now();
         // 遍历所有key，移除过期的
-        limiterMap.entrySet().removeIf(entry -> currentTime > entry.getValue().getExpireTime());
+        limiterMap.entrySet().removeIf(entry -> timeCur > entry.getValue().getExpireTime());
         log.info("清理过期限流key完成，剩余key数量：{}", limiterMap.size());
     }
 
@@ -116,7 +117,7 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
         }
         // 3. 生成唯一限流key（解决重载方法问题 + IP限流）
         String limitKey = limitKey(handlerMethod, request, limiter);
-        long currentTime = Clock.systemUTC().millis();
+        long timeCur = Clock.systemUTC().millis();
         // 时间窗口（毫秒）
         long timeWindow = limiter.timeWindow();
         // 时间窗口内最大请求数
@@ -126,20 +127,20 @@ public class RateLimiterInterceptor implements HandlerInterceptor {
         RateLimitEntity entity = limiterMap.computeIfAbsent(limitKey, k -> {
             RateLimitEntity newEntity = new RateLimitEntity();
             // 初始化过期时间：当前时间 + 时间窗口
-            newEntity.setExpireTime(currentTime + timeWindow);
+            newEntity.setExpireTime(timeCur + timeWindow);
             return newEntity;
         });
 
         // 5. 检查是否已过期，过期则重置（每个key独立重置，解决全局重置问题）
-        if (currentTime > entity.getExpireTime()) {
+        if (timeCur > entity.getExpireTime()) {
             // 加锁防止并发重置
             synchronized (entity) {
                 // 双重检查（DCL）
-                if (currentTime > entity.getExpireTime()) {
+                if (timeCur > entity.getExpireTime()) {
                     // 重置计数
                     entity.getCount().set(0);
                     // 重置过期时间
-                    entity.setExpireTime(currentTime + timeWindow);
+                    entity.setExpireTime(timeCur + timeWindow);
                 }
             }
         }
