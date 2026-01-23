@@ -1,8 +1,6 @@
 package cn.shuniverse.base.service.impl;
 
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.core.exception.BisException;
 import cn.shuniverse.base.core.resp.RCode;
@@ -14,7 +12,14 @@ import cn.shuniverse.base.utils.CapacityUtil;
 import cn.shuniverse.base.utils.FileCustomUtil;
 import cn.shuniverse.base.utils.MinioUtil;
 import io.minio.*;
-import io.minio.errors.*;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
+import io.minio.errors.InternalException;
+import io.minio.errors.InvalidBucketNameException;
+import io.minio.errors.InvalidResponseException;
+import io.minio.errors.MinioException;
+import io.minio.errors.ServerException;
+import io.minio.errors.XmlParserException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +33,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,27 +71,6 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
     @Override
     public String sport() {
         return FileStorageClassifyEnum.MINIO.getCode();
-    }
-
-    /**
-     * 构建文件路径
-     *
-     * @param filename           文件名
-     * @param time               时间
-     * @param fileSourceCategory 文件权限
-     * @return 文件路径
-     */
-    private String buildFilePath(String filename, Date time, String fileSourceCategory) {
-        if (null == time) {
-            time = new Date();
-        }
-        // 获取文件后缀
-        String extensionName = FileUtil.extName(filename);
-        // 日期转文件夹
-        String dateString = DateUtil.format(time, "yyyy/MM/dd");
-        // 拼接存储路径
-//        return String.format("/%s/%s/%s.%s", fileSourceCategory, dateString, IdUtil.fastSimpleUUID(), extensionName);
-        return "/" + fileSourceCategory + "/" + dateString + "/" + IdUtil.fastSimpleUUID() + "." + extensionName;
     }
 
     private String getCosShortPath(String url, String bucket) {
@@ -194,12 +177,12 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
 
     @Override
     public ObjectStorageDto uploadPrivate(MultipartFile file) {
-        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), null, FilePrivacyCategoryEnum.PRIVATE.getCode()));
+        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), FilePrivacyCategoryEnum.PRIVATE.getCode()));
     }
 
     @Override
     public ObjectStorageDto uploadPublic(MultipartFile file) {
-        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), null, FilePrivacyCategoryEnum.PUBLIC.getCode()));
+        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), FilePrivacyCategoryEnum.PUBLIC.getCode()));
     }
 
     /**
