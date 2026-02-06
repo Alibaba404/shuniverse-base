@@ -2,6 +2,7 @@ package cn.shuniverse.base.utils;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,6 +16,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -141,7 +143,7 @@ public class FileCustomUtil extends cn.hutool.core.io.FileUtil {
         return fileMd5(new FileInputStream(file));
     }
 
-    public static String fileMd5(FileInputStream fis) throws NoSuchAlgorithmException, IOException {
+    public static String fileMd5(InputStream fis) throws NoSuchAlgorithmException, IOException {
 //        // 1. 初始化MD5算法
 //        MessageDigest md5 = MessageDigest.getInstance("MD5");
 //        // 8KB缓冲区（避免一次性加载大文件）
@@ -162,5 +164,4 @@ public class FileCustomUtil extends cn.hutool.core.io.FileUtil {
 //        return sb.toString();
         return DigestUtils.md5Hex(fis);
     }
-
 }

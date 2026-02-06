@@ -1,11 +1,11 @@
 package cn.shuniverse.base.service.impl;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.json.JSONUtil;
 import cn.shuniverse.base.core.exception.BisException;
 import cn.shuniverse.base.core.resp.RCode;
 import cn.shuniverse.base.entity.dto.ObjectStorageDto;
-import cn.shuniverse.base.entity.enums.FilePrivacyCategoryEnum;
 import cn.shuniverse.base.entity.enums.FileStorageClassifyEnum;
 import cn.shuniverse.base.service.IObjectStorageStrategyService;
 import cn.shuniverse.base.utils.CapacityUtil;
@@ -28,7 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.InvalidKeyException;
@@ -92,22 +91,71 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
         return getCosShortPath(url, bucket);
     }
 
-    private String upload(MultipartFile file, String filePath) {
-        try (InputStream inputStream = file.getInputStream()) {
+    private String getFilename(String fileUrl) {
+        if (fileUrl != null) {
+            return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        }
+        return null;
+    }
+
+    /**
+     * 构建通用返回
+     *
+     * @param fileMimeType         文件类型
+     * @param fileMd5              文件md5
+     * @param fileOriginalFilename 原文件名
+     * @param fileUrl              文件地址
+     * @param fileSize             文件大小
+     * @return 上传文件信息对象
+     */
+    private ObjectStorageDto buildDto(String fileMimeType, String fileMd5, String fileOriginalFilename, String fileUrl, Long fileSize) {
+        log.info("文件MD5：{}", fileMd5);
+        return new ObjectStorageDto()
+                .setFileType(fileMimeType)
+                .setFileMd5(fileMd5)
+                .setOriginFileName(fileOriginalFilename)
+                .setFilename(this.getFilename(fileUrl))
+                .setFilePath(this.getCosShortPath(fileUrl))
+                .setFileUrl(fileUrl)
+                .setFileSize(fileSize);
+    }
+
+    /**
+     * 文件MD5计算
+     *
+     * @param fileSize    文件大小
+     * @param inputStream 文件流
+     * @return 文件MD5
+     */
+    private String fileMd5Calculator(long fileSize, InputStream inputStream) {
+        // 文件大小MB
+        double mb = CapacityUtil.bytesToMb(fileSize);
+        // 小于 10MB才自动计算md5
+        if (mb <= 10) {
+            try {
+                return FileCustomUtil.fileMd5(inputStream);
+            } catch (NoSuchAlgorithmException | IOException e) {
+                return "-1";
+            }
+        }
+        return "-1";
+    }
+
+    private String uploadCommon(InputStream inputStream, String fileMimeType, Long fileSize, String filePath) {
+        try {
             // 文件的MIME类型
-            String mimeType = file.getContentType();
-            if (StringUtils.isBlank(mimeType)) {
-                mimeType = "text/plain";
+            if (StringUtils.isBlank(fileMimeType)) {
+                fileMimeType = "text/plain";
             }
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
-                    // 文件名
+                    // 文件短路径
                     .object(filePath)
                     // 文件类型
-                    .contentType(mimeType)
+                    .contentType(fileMimeType)
                     // 存储桶名
                     .bucket(bucket)
                     // 文件流，以及大小，-1代表不分片
-                    .stream(inputStream, file.getSize(), -1)
+                    .stream(inputStream, fileSize, -1)
                     .build();
             //执行上传
             ObjectWriteResponse objectWriteResponse = minioClient.putObject(putObjectArgs);
@@ -117,27 +165,21 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
             log.info("文件地址 :{}", fileUrl);
             return fileUrl;
         } catch (MinioException | IOException | NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("Error occurred: {}", e.getMessage());
+            log.error("文件上传失败！QaQ", e);
             throw BisException.me(RCode.FILE_UPLOAD_ERROR);
         }
     }
 
-    private String getFilename(String fileUrl) {
-        if (fileUrl != null) {
-            return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-        }
-        return null;
-    }
 
     /**
      * 文件上传
      *
-     * @param file          文件对象
-     * @param buildFilePath 文件路径
+     * @param file     文件对象
+     * @param filePath 文件路径
      * @return 文件路径
      */
     @Override
-    public ObjectStorageDto uploadCommon(MultipartFile file, String buildFilePath) {
+    public ObjectStorageDto upload(MultipartFile file, String filePath) throws IOException {
         if (null == file) {
             throw BisException.me(RCode.FILE_EMPTY);
         }
@@ -147,42 +189,41 @@ public class MinioObjectStorageStrategyServiceImpl implements IObjectStorageStra
             if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
-            fileUrl = this.upload(file, buildFilePath);
+            fileUrl = this.uploadCommon(file.getInputStream(), file.getContentType(), file.getSize(), filePath);
         } catch (Exception e) {
             log.error("文件上传失败！QaQ", e);
             throw BisException.me(RCode.FILE_UPLOAD_ERROR);
         }
-        // 文件大小MB
-        double mb = CapacityUtil.bytesToMb(file.getSize());
-        String fileMd5 = "-1";
-        // 小于 10MB才自动计算md5
-        if (mb <= 10) {
-            try {
-                fileMd5 = FileCustomUtil.fileMd5((FileInputStream) file.getInputStream());
-            } catch (NoSuchAlgorithmException | IOException e) {
-                fileMd5 = "-1";
-            } finally {
-                log.info("文件MD5: {}", fileMd5);
-            }
+        return buildDto(file.getContentType(), this.fileMd5Calculator(file.getSize(), file.getInputStream()), file.getOriginalFilename(), fileUrl, file.getSize());
+    }
+
+    /**
+     * 文件上传（公共）
+     *
+     * @param file     文件对象
+     * @param filePath 文件短路径（不含 bucket）
+     * @return 文件上传信息对象
+     */
+    @Override
+    public ObjectStorageDto upload(File file, String filePath) {
+        if (null == file) {
+            throw BisException.me(RCode.FILE_EMPTY);
         }
-        return new ObjectStorageDto()
-                .setFileType(file.getContentType())
-                .setFileMd5(fileMd5)
-                .setOriginFileName(file.getOriginalFilename())
-                .setFilename(this.getFilename(fileUrl))
-                .setFilePath(this.getCosShortPath(fileUrl))
-                .setFileUrl(fileUrl)
-                .setFileSize(file.getSize());
-    }
-
-    @Override
-    public ObjectStorageDto uploadPrivate(MultipartFile file) {
-        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), FilePrivacyCategoryEnum.PRIVATE.getCode()));
-    }
-
-    @Override
-    public ObjectStorageDto uploadPublic(MultipartFile file) {
-        return uploadCommon(file, this.buildFilePath(file.getOriginalFilename(), FilePrivacyCategoryEnum.PUBLIC.getCode()));
+        String fileMimeType = FileUtil.getMimeType(file.getAbsolutePath());
+        long fileSize = FileUtil.size(file);
+        String fileUrl;
+        try {
+            // 1. 检查 Bucket 是否存在，不存在则创建
+            if (!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build())) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            }
+            fileUrl = this.uploadCommon(FileUtil.getInputStream(file), fileMimeType, fileSize, filePath);
+        } catch (Exception e) {
+            log.error("文件上传失败！QaQ", e);
+            throw BisException.me(RCode.FILE_UPLOAD_ERROR);
+        }
+        String fileMd5 = this.fileMd5Calculator(fileSize, IoUtil.toStream(file));
+        return buildDto(fileMimeType, fileMd5, file.getName(), fileUrl, fileSize);
     }
 
     /**

@@ -18,6 +18,11 @@ import java.io.InputStream;
 @Service
 public class DefaultFileStorageStrategyServiceImpl implements IObjectStorageStrategyService {
     @Override
+    public ObjectStorageDto upload(File file, String filePath) {
+        return null;
+    }
+
+    @Override
     public String sport() {
         return FileStorageClassifyEnum.LOCAL.getCode();
     }
@@ -26,22 +31,12 @@ public class DefaultFileStorageStrategyServiceImpl implements IObjectStorageStra
     /**
      * 文件上传
      *
-     * @param file          文件对象
-     * @param buildFilePath
+     * @param file     文件对象
+     * @param filePath 文件路径
      * @return 文件路径
      */
     @Override
-    public ObjectStorageDto uploadCommon(MultipartFile file, String buildFilePath) {
-        return null;
-    }
-
-    @Override
-    public ObjectStorageDto uploadPrivate(MultipartFile file) {
-        return null;
-    }
-
-    @Override
-    public ObjectStorageDto uploadPublic(MultipartFile file) {
+    public ObjectStorageDto upload(MultipartFile file, String filePath) {
         return null;
     }
 
