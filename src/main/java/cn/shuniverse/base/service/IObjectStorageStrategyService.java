@@ -75,6 +75,6 @@ public interface IObjectStorageStrategyService {
      * @return 文件路径
      */
     default String buildFilePath(String filename, String uid, Date time, String filePermissionPath) {
-        return FilePathUtil.buildPathCommon(filename, uid, time, null, filePermissionPath);
+        return FilePathUtil.buildPathCommon(filename, true, uid, time, null, filePermissionPath);
     }
 }

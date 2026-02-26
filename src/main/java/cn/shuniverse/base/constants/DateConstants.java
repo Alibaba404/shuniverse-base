@@ -11,7 +11,9 @@ public class DateConstants {
     public static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     public static final String DATETIME_NOSECOND_FORMAT = "yyyy-MM-dd HH:mm";
     public static final String DATE_FORMAT = "yyyy-MM-dd";
+    public static final String TIME_FORMAT = "HH:mm:ss";
     public static final String DATETIME_FORMAT_SIMPLE = "yyyyMMddHHmmss";
+    public static final String DATE_FORMAT_SIMPLE = "yyyyMMdd";
 
     // 私有构造函数
     private DateConstants() {

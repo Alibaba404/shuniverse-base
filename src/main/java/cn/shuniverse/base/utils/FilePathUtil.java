@@ -33,24 +33,29 @@ public class FilePathUtil {
     }
 
     public static String buildPathCommon(String filename) {
-        return buildPathCommon(filename, null, null, null, null);
+        return buildPathCommon(filename, true);
+    }
+
+    public static String buildPathCommon(String filename, Boolean filenameAutoGen) {
+        return buildPathCommon(filename, filenameAutoGen, null, null, null, null);
     }
 
     public static String buildPathCommon(String filename, String mediaType) {
-        return buildPathCommon(filename, null, null, mediaType, null);
+        return buildPathCommon(filename, true, null, null, mediaType, null);
     }
 
     /**
      * 构建文件路径（不含桶路径）
      *
      * @param filename           文件名
+     * @param filenameAutoGen    自动生成文件名
      * @param uid                用户Id
      * @param time               时间
      * @param mediaType          媒体类型（images、docs、files 等）
      * @param filePermissionPath 文件权限路径
      * @return 文件路径
      */
-    public static String buildPathCommon(String filename, String uid, Date time, String mediaType, String filePermissionPath) {
+    public static String buildPathCommon(String filename, Boolean filenameAutoGen, String uid, Date time, String mediaType, String filePermissionPath) {
         // 使用当前模板路径副本避免污染原始模板
         String path = templatePath;
         if (StringUtils.isNotBlank(filePermissionPath)) {
@@ -67,8 +72,12 @@ public class FilePathUtil {
         } else {
             path = path.replace("{mediaType}", "files");
         }
-        path = path.replace("{filename}", IdUtil.fastSimpleUUID());
-        path = path.replace("{ext}", FileUtil.extName(filename));
+        if (Boolean.TRUE.equals(filenameAutoGen)) {
+            path = path.replace("{filename}", IdUtil.fastSimpleUUID());
+            path = path.replace("{ext}", FileUtil.extName(filename));
+        } else {
+            path = path.replace("{filename}.{ext}", filename);
+        }
         return path;
     }
 }
